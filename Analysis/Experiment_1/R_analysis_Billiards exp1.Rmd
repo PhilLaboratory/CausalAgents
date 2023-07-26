@@ -1,0 +1,155 @@
+---
+title: "Causal Agents"
+output: html_notebook
+---
+
+This [R Markdown](http://rmarkdown.rstudio.com) Notebook. Contains All statistical analyses for the Causal Agents Studies
+
+# Study 1
+
+```{r}
+require(lme4)
+require(emmeans)
+e1.dat = read.csv('/Users/bryangonzalez/BilliardsApp/Data/Experiment_1/e1dat.csv')
+e1.dat$outcome <- as.factor(e1.dat$outcome)
+e1.dat$cf<- as.factor(e1.dat$cf)
+e1.dat$agent<- as.factor(e1.dat$agent)
+
+
+# Three-way interaction
+#e1.null <- lmer('causal_rating ~ outcome*cf*agent + (1 + agent + outcome + cf|jspsychID) + (1 + agent|vid_num)', data=e1.dat, REML=FALSE)
+# e1.m1 <- lmer('causal_rating ~ outcome*cf + outcome*agent + agent*cf +  (1 + agent + outcome + cf|jspsychID) + (1 + agent|vid_num)', data=e1.dat, REML=FALSE)
+# outxcfxagent <-anova(e1.null, e1.m1)
+# saveRDS(outxcfxagent, "/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/outxcfxagnt.rda")
+outxcfxagent <- readRDS("/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/outxcfxagnt.rda")
+outxcfxagent
+
+# Two way interaction 
+# e1.m2 <-lmer('causal_rating ~ outcome*cf + (1 + agent + outcome + cf |jspsychID) + (1 + agent|vid_num)', data=e1.dat, REML=FALSE)
+# e1.m3 <-lmer('causal_rating ~ outcome + cf + (1 + agent + outcome + cf |jspsychID) + (1 + agent|vid_num)', data=e1.dat, REML=FALSE)
+# outxcf <-anova(e1.m2, e1.m3)
+# saveRDS(outxcf, "/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/outxcf.rda")
+outxcf <- readRDS("/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/outxcf.rda")
+outxcf
+
+#Pairwise contrast
+# outxcf_post <- emmeans(e1.m2, specs=pairwise ~ outcome:cf, pbkrtest.limit = 5040)
+# saveRDS(outxcf_post$contrasts, "/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/outxcf_post.rda")
+outxcf_post <- as.data.frame(readRDS("/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/outxcf_post.rda"))
+outxcf_post
+
+# Main effect of animacy
+# e1.m4 <-lmer('causal_rating ~ outcome*cf  + animacy_rating + (1 + agent + outcome + cf|jspsychID) + (1+agent |vid_num)', data=e1.dat, REML=FALSE)
+# anim <- anova(e1.m4, e1.m2 )
+# saveRDS(anim, "/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/anim.rda")
+anim <- readRDS("/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/anim.rda")
+anim
+
+# Manipulation check
+# e1.m5 <- lmer('animacy_rating ~ 1 + (1 + agent + outcome + cf|jspsychID) + (1+agent |vid_num)', data=e1.dat, REML=FALSE)
+# e1.m6 <- lmer('animacy_rating ~ agent + (1 + agent + outcome + cf|jspsychID) + (1+agent |vid_num)', data=e1.dat, REML=FALSE)
+# manipchk <- anova(e1.m5, e1.m6)
+# saveRDS(manipchk,"/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/manipchk.rda" )
+manipchk <- readRDS("/Users/bryangonzalez/BilliardsApp/Analysis/Experiment_1/rmodels/manipchk.rda")
+manipchk
+
+```
+
+# Experiment 2
+
+```{r}
+e2dat <- read.csv('/Users/bryangonzalez/BilliardsApp/Data/Experiment_4/e4_dat.csv')
+e2dat$agent <- as.factor(e2dat$agent)
+e2dat$condition <- as.factor(e2dat$condition)
+#e2dat$agent <- as.factor(e2dat$question_order)
+
+# The effect of counterfactual judgments on causal ratings
+e2.m0 <- lm('cause1 ~  1', data=e2dat)
+e2.m1 <- lm('cause1 ~ agent', data=e2dat)
+anova(e2.m0, e2.m1)
+summary(e2.m1)
+
+# The effect of animacy on counterfactuals 
+e2.m2 <- lmer('cf1 ~ 1 ', data=e2dat)
+e2.m3 <- lm('cf1 ~ agent ', data=e2dat)
+anova(e2.m2, e2.m3)
+summary(e2.m3)
+
+# the Effect of animacy on causal ratings
+e2.m4 <- lm('cause1 ~ agent + cf1', data=e2dat)
+e2.m5 <- lm('cause1 ~ agent', data=e2dat)
+anova(e2.m4, e2.m5)
+summary(e2.m4)
+
+# Mediation of the the effect of animacy on causal ratings, by counterfactuals
+require(mediation)
+# predict mediator with variable of interest
+med_model = lm('cf1 ~ agent ', data=e2dat)
+#summary(med_model)
+#require(flexplot)
+#visualize(med_model)
+full_model = lm('cause1 ~ cf1 + agent', data=e2dat)
+results = mediate(med_model, full_model, treat='agent', mediator='cf1', control.value = "inanimate", treat.value = "animate", boot=TRUE)
+summary(results)
+```
+
+
+# Experiment 3
+```{r}
+e3dat <- read.csv('/Users/bryangonzalez/BilliardsApp/Data/Experiment_2/e3_dat.csv')
+e3dat$condition <- as.factor(e3dat$condition)
+
+e3.m0 <- lm('agent ~ condition', data=e3dat)
+summary(e3.m0)
+
+```
+
+```{r}
+
+cond_post <- emmeans(e3.m0, specs=pairwise ~ condition)
+cond_post$contrasts
+```
+
+```{r}
+e3.cf <- read.csv('/Users/bryangonzalez/BilliardsApp/Data/Experiment_3/CFD_items.csv')
+e3.cf$condition <- as.factor(e3.cf$condition)
+e3.cf$CF_question <- as.factor(e3.cf$CF_question)
+
+e3.cf.m0 <- lmer('agreement ~ condition*CF_question + (1|prolificID)', data=e3.cf, REML=FALSE)
+e3.cf.m1 <- lmer('agreement ~ condition + CF_question + (1|prolificID)', data=e3.cf, REML=FALSE)
+e3.cf_condxball <- anova(e3.cf.m0, e3.cf.m1)
+e3.cf_condxball
+condxball_post <- emmeans(e3.cf.m0, specs=pairwise ~ condition:CF_question)
+condxball_post$contrasts
+```
+
+```{r}
+e3.exp <- read.csv('/Users/bryangonzalez/BilliardsApp/Data/Experiment_3/agnt_suprs.csv')
+e3.exp$condition <- as.factor(e3.exp$condition)
+e3.exp$animacy <- as.factor(e3.exp$animacy)
+
+e3.exp.m0 <- lm('agreement ~ 1', data=e3.exp)
+e3.exp.m1 <- lm('agreement ~ animacy', data=e3.exp)
+exp.anim <- anova(e3.exp.m0, e3.exp.m1)
+as.data.frame(exp.anim)
+
+e3.exp.m2 <- lm('agreement ~ condition', data=e3.exp)
+exp.cond_post <- emmeans(e3.exp.m2, specs=pairwise ~ condition)
+as.data.frame(exp.cond_post$contrasts)
+
+```
+
+```{r}
+e3.diff <- read.csv('/Users/bryangonzalez/BilliardsApp/Data/Experiment_3/agnt_diff.csv')
+e3.diff$condition <- as.factor(e3.diff$condition)
+e3.diff$animacy <- as.factor(e3.diff$animacy)
+
+e3.diff.m0 <- lm('agreement ~ 1', data=e3.diff)
+e3.diff.m1 <- lm('agreement ~ animacy', data=e3.diff)
+diff.anim <- anova(e3.diff.m0, e3.diff.m1)
+as.data.frame(diff.anim)
+
+e3.diff.m2 <- lm('agreement ~ condition', data=e3.diff)
+diff.cond_post <- emmeans(e3.diff.m2, specs=pairwise ~ condition)
+as.data.frame(diff.cond_post$contrasts)
+```
